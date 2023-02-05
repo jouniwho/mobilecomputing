@@ -75,7 +75,7 @@ fun Payment(
                         contentDescription = null
                     )
                 }
-                Text(text = "Payment")
+                Text(text = "Reminder")
             }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -85,7 +85,7 @@ fun Payment(
                 OutlinedTextField(
                     value = title.value,
                     onValueChange = { title.value = it },
-                    label = { Text(text = "Payment title")},
+                    label = { Text(text = "Reminder title")},
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(10.dp))
@@ -97,11 +97,7 @@ fun Payment(
                 OutlinedTextField(
                     value = amount.value,
                     onValueChange = { amount.value = it },
-                    label = { Text(text = "Amount")},
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number
-                    )
+                    label = { Text(text = "Note")},
                 )
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -147,7 +143,7 @@ fun Payment(
                             viewModel.savePayment(
                                 com.example.app3.data.entity.Payment(
                                     paymentTitle = title.value,
-                                    paymentAmount = amount.value.toDouble(),
+                                    paymentAmount = amount.value,
                                     paymentDate = mDate.value,
                                     paymentCategoryId = getCategoryId(viewState.categories, category.value)
                                 )

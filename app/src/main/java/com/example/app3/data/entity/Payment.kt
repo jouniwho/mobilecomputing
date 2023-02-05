@@ -28,5 +28,5 @@ data class Payment(
     @ColumnInfo(name = "payment_title") val paymentTitle: String,
     @ColumnInfo(name = "payment_date") val paymentDate: String,
     @ColumnInfo(name = "payment_category_id") val paymentCategoryId: Long,
-    @ColumnInfo(name = "payment_amount") val paymentAmount: Double
+    @ColumnInfo(name = "payment_amount") val paymentAmount: String
 )
