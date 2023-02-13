@@ -1,18 +1,18 @@
-package com.codemave.mobilecomputing.ui.home.categoryPayment
+package com.codemave.mobilecomputing.ui.home.categoryReminder
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app3.Graph
-import com.example.app3.data.repository.PaymentRepository
-import com.example.app3.data.room.PaymentToCategory
+import com.example.app3.data.repository.ReminderRepository
+import com.example.app3.data.room.ReminderToCategory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 
-class CategoryPaymentViewModel(
+class CategoryReminderViewModel(
     private val categoryId: Long,
-    private val paymentRepository: PaymentRepository = Graph.paymentRepository
+    private val paymentRepository: ReminderRepository = Graph.reminderRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(CategoryPaymentViewState())
 
@@ -21,7 +21,7 @@ class CategoryPaymentViewModel(
 
     init {
         viewModelScope.launch {
-            paymentRepository.paymentsInCategory(categoryId).collect { list ->
+            paymentRepository.remindersInCategory(categoryId).collect { list ->
                 _state.value = CategoryPaymentViewState(
                     payments = list
                 )
@@ -31,5 +31,5 @@ class CategoryPaymentViewModel(
 }
 
 data class CategoryPaymentViewState(
-    val payments: List<PaymentToCategory> = emptyList()
+    val payments: List<ReminderToCategory> = emptyList()
 )

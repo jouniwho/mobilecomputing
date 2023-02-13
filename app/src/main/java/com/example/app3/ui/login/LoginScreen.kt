@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.app3.data.entity.User
-
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -25,6 +25,7 @@ fun LoginScreen(
     viewModel: RegistrationViewModel = viewModel()
     ){
     val viewState by viewModel.state.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     val username = remember{mutableStateOf("")}
     val password = remember{mutableStateOf("")}
 
@@ -70,10 +71,19 @@ fun LoginScreen(
             onClick = {
                 val (test, pass) = getusername(viewState.users, username.value)
                 if(test != "no such user" && pass == password.value) {
+                    val userid = getuserId(viewState.users, username.value)
+                    coroutineScope.launch {
+                        viewModel.updateUser(
+                            User(
+                                id = userid,
+                                password = password.value,
+                                username = username.value,
+                                loggedIn = true
+                        ))}
+
                     navController.navigate("home") {
                         popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
-                    }
+                        launchSingleTop = true }
                 }
             },
             shape = RoundedCornerShape(corner = CornerSize(50.dp)),
@@ -98,6 +108,14 @@ fun LoginScreen(
         }
 
 
+}
+
+class userWhoIsin{
+
+}
+
+private fun getuserId(users: List<User>, userName: String): Long {
+    return users.first { user -> user.username== userName }.id
 }
 
 private fun getusername(users: List<User>, userName: String): Pair<String, String> {

@@ -1,24 +1,18 @@
-package com.codemave.app3.ui.home.categoryPayment
+package com.example.app3.home.categoryReminder
+
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -26,61 +20,83 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.codemave.app3.util.viewModelProviderFactoryOf
-import com.codemave.mobilecomputing.ui.home.categoryPayment.CategoryPaymentViewModel
+import com.codemave.mobilecomputing.ui.home.categoryReminder.CategoryReminderViewModel
 
 import com.example.app3.R
 import com.example.app3.data.entity.Category
-import com.example.app3.data.entity.Payment
-import com.example.app3.data.room.PaymentToCategory
+import com.example.app3.data.entity.Reminder
+import com.example.app3.data.room.ReminderToCategory
+import com.example.app3.ui.Reminder.ReminderViewModel
+import com.example.app3.ui.Reminder.UpdateReminder
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun CategoryPayment(
+fun CategoryReminder(
     categoryId: Long,
     modifier: Modifier = Modifier
 ) {
-    val viewModel: CategoryPaymentViewModel = viewModel(
+    val viewModel: CategoryReminderViewModel = viewModel(
         key = "category_list_$categoryId",
-        factory = viewModelProviderFactoryOf { CategoryPaymentViewModel(categoryId) }
+        factory = viewModelProviderFactoryOf { CategoryReminderViewModel(categoryId) }
     )
     val viewState by viewModel.state.collectAsState()
 
     Column(modifier = modifier) {
-        PaymentList(
-            list = viewState.payments
+        ReminderList(
+            list = viewState.payments,
         )
     }
 }
 
 @Composable
-private fun PaymentList(
-    list: List<PaymentToCategory>
+private fun ReminderList(
+    list: List<ReminderToCategory>
 ) {
     LazyColumn(
         contentPadding = PaddingValues(0.dp),
         verticalArrangement = Arrangement.Center
     ) {
         items(list) { item ->
-            PaymentListItem(
-                payment = item.payment,
+            ReminderListItem(
+                reminder = item.remainder,
                 category = item.category,
                 onClick = {},
                 modifier = Modifier.fillParentMaxWidth(),
             )
+
         }
     }
 }
 
+private enum class PopupState{
+    Open, Close
+}
+
 @Composable
-private fun PaymentListItem(
-    payment: Payment,
+private fun ReminderListItem(
+    reminder: Reminder,
     category: Category,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: ReminderViewModel = viewModel(),
 ) {
-    ConstraintLayout(modifier = modifier.clickable { onClick() }) {
+    val viewState by viewModel.state.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    val reminderIdState: MutableState<Long?> = rememberSaveable { mutableStateOf(null) }
+
+    ConstraintLayout(modifier = modifier.clickable { onClick() }.pointerInput(Unit){
+        detectTapGestures(
+            onLongPress = {
+                coroutineScope.launch {viewModel.deleteReminder(reminder)}
+            }
+        )
+    }) {
         val (divider, paymentTitle, paymentCategory, icon, date) = createRefs()
+
+        val popupState = rememberSaveable { mutableStateOf(PopupState.Close)}
+
         Divider(
             Modifier.constrainAs(divider) {
                 top.linkTo(parent.top)
@@ -91,7 +107,7 @@ private fun PaymentListItem(
 
         // title
         Text(
-            text = payment.paymentTitle,
+            text = reminder.message,
             maxLines = 1,
             style = MaterialTheme.typography.subtitle1,
             modifier = Modifier.constrainAs(paymentTitle) {
@@ -126,9 +142,16 @@ private fun PaymentListItem(
             }
         )
 
-        // date
+        var textToShow = ""
+
+        if (category.name == "Time") {
+            textToShow = "${reminder.reminderTime} ${reminder.reminderDate}"
+        }else{
+            textToShow = "(${reminder.locationX} ${reminder.locationY})"
+        }
+        // date or location
         Text(
-            text = payment.paymentDate,
+            text = textToShow,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.caption,
@@ -138,7 +161,7 @@ private fun PaymentListItem(
                     end = icon.start,
                     startMargin = 8.dp,
                     endMargin = 16.dp,
-                    bias = 0f // float this towards the start. this was is the fix we needed
+                    bias = 0f
                 )
                 centerVerticallyTo(paymentCategory)
                 top.linkTo(paymentTitle.bottom, 6.dp)
@@ -146,9 +169,12 @@ private fun PaymentListItem(
             }
         )
 
+
+
         // icon
         IconButton(
-            onClick = { /*TODO*/ },
+            onClick = { popupState.value = PopupState.Open
+                reminderIdState.value = reminder.id},
             modifier = Modifier
                 .size(50.dp)
                 .padding(6.dp)
@@ -159,18 +185,49 @@ private fun PaymentListItem(
                 }
         ) {
             Icon(
-                imageVector = Icons.Filled.Check,
-                contentDescription = stringResource(R.string.check_mark)
+                imageVector = Icons.Filled.Edit,
+                contentDescription = stringResource(R.string.edit_square)
             )
         }
+
+        when (popupState.value) {
+            PopupState.Open -> {
+                UpdateReminder(
+                    reminder = reminder,
+                    onClickSave ={coroutineScope.launch {
+                        viewModel.updateReminder(
+                            Reminder(
+                                id = reminder.id,
+                                reminderCategoryId = getCategoryId(viewState.categories, it.remindCategory),
+                                message = it.mess,
+                                reminderDate = it.remindDate,
+                                reminderTime = it.remindTime,
+                                reminderCategory = it.remindCategory,))}
+                    popupState.value = PopupState.Close
+                    }
+                )
+            }
+            PopupState.Close -> {}
+        }
+
+        PickImageFromGallery()
+
     }
+
+}
+
+
+
+
+private fun getCategoryId(categories: List<Category>, categoryName: String): Long {
+    return categories.first { category -> category.name == categoryName }.id
 }
 
 private fun Date.formatToString(): String {
     return SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(this)
 }
 
-private fun Long.toDateString(): String {
+fun Long.toDateString(): String {
     return SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date(this))
 
 }

@@ -24,7 +24,8 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun RegistrationScreen(navController: NavController, viewModel: RegistrationViewModel = viewModel()) {
+fun RegistrationScreen(navController: NavController,
+                       viewModel: RegistrationViewModel = viewModel()) {
     val context = LocalContext.current
 
     val viewState by viewModel.state.collectAsState()
@@ -157,7 +158,8 @@ fun RegistrationScreen(navController: NavController, viewModel: RegistrationView
                                 viewModel.saveUser(
                                     User(
                                         username = user.value.text,
-                                        password = password.value.text
+                                        password = password.value.text,
+                                        loggedIn = false
                                     )
                                 )
                             }

@@ -8,7 +8,6 @@ class CategoryRepository(
     private val categoryDao: CategoryDao
 ) {
     fun categories(): Flow<List<Category>> = categoryDao.categories()
-    fun getCategoryWithId(categoryId: Long): Category? = categoryDao.getCategoryWithId(categoryId)
 
     /**
      * Add a category to the database if it does not exist

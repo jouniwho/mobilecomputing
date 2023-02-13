@@ -26,5 +26,5 @@ abstract class UserDao {
     abstract suspend fun update(entity: User)
 
     @Delete
-    abstract suspend fun delete(entity: User): Int
+    abstract suspend fun delete(entity: User)
 }

@@ -5,11 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.app3.Graph
 import com.example.app3.data.entity.User
 import com.example.app3.data.repository.UserRepository
-import com.example.app3.home.HomeViewState
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class RegistrationViewModel(
@@ -24,6 +20,22 @@ class RegistrationViewModel(
         return userRepository.addUser(user)
     }
 
+    suspend fun getUser(userId: Long) : User? {
+        return userRepository.getUserWithId(userId)
+    }
+
+    suspend fun updateUser(user: User) {
+        return userRepository.editUser(user)
+    }
+
+    suspend fun deleteUser(user: User) {
+        return userRepository.deleteUser(user)
+    }
+
+    suspend fun getUsersList(){
+        userRepository.users()
+    }
+
     init {
         viewModelScope.launch {
             userRepository.users().collect { users ->
@@ -36,8 +48,8 @@ class RegistrationViewModel(
 
     private fun loadTestUserFromDb() {
         val list = mutableListOf(
-            User(username = "test", password = "test123"),
-            User(username = "test2", password = "test123"),
+            User(username = "test", password = "test123", loggedIn = false),
+            User(username = "test2", password = "test123", loggedIn = false),
         )
         viewModelScope.launch {
             list.forEach { user -> Graph.userRepository.addUser(user) }

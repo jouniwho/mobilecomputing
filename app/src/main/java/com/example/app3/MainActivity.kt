@@ -14,10 +14,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.app3.home.Home
+import com.example.app3.ui.Reminder.Reminder
 import com.example.app3.ui.login.LoginScreen
 import com.example.app3.ui.login.RegistrationScreen
-import com.example.app3.ui.payment.Payment
-import com.example.app3.ui.profile.UIProfile
+import com.example.app3.ui.profile.UIprofile
 import com.example.app3.ui.theme.App3Theme
 
 class MainActivity() : ComponentActivity() {
@@ -52,16 +52,17 @@ fun DefaultPreview() {
     }
 }
 
+
 @Composable
 fun LoginAndRegistration(){
-    val navController = rememberNavController(
-    )
+    val navController = rememberNavController()
+
     NavHost(navController = navController, startDestination = "login_screen", builder = {
-        composable("payment") { Payment(navController = navController)}
+        composable("reminder") { Reminder(navController = navController)}
         composable("login_screen", content = { LoginScreen(navController = navController, modifier = Modifier.fillMaxSize()) })
         composable("register_screen", content = { RegistrationScreen(navController = navController) })
         composable("home", content = { Home(navController = navController) })
-        composable("profile", content = { UIProfile(navController = navController, modifier = Modifier.fillMaxSize()) })
+        composable("profile", content = { UIprofile(navController = navController)})
     })
 }
 

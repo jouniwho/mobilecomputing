@@ -11,16 +11,20 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.codemave.app3.ui.home.categoryPayment.CategoryPayment
 import com.example.app3.R
 import com.example.app3.data.entity.Category
+import com.example.app3.data.entity.User
+import com.example.app3.home.categoryReminder.CategoryReminder
+import com.example.app3.ui.login.RegistrationViewModel
 import com.google.accompanist.insets.systemBarsPadding
+import kotlinx.coroutines.launch
 
 @Composable
 fun Home(
@@ -29,7 +33,9 @@ fun Home(
 ) {
     val viewState by viewModel.state.collectAsState()
 
+
     val selectedCategory = viewState.selectedCategory
+
 
     if (viewState.categories.isNotEmpty() && selectedCategory != null) {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -53,12 +59,16 @@ fun HomeContent(
     categories: List<Category>,
     onCategorySelected: (Category) -> Unit,
     navController: NavController,
+    anotherViewModel: RegistrationViewModel = viewModel()
 ) {
+
+    val coroutineScope = rememberCoroutineScope()
+
     Scaffold(
         modifier = Modifier.padding(bottom = 24.dp),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(route = "payment") },
+                onClick = { navController.navigate(route = "reminder") },
                 contentColor = Color.Blue,
                 modifier = Modifier.padding(all = 20.dp)
             )
@@ -89,7 +99,7 @@ fun HomeContent(
                 onCategorySelected = onCategorySelected,
             )
 
-            CategoryPayment(
+            CategoryReminder(
                 modifier = Modifier.fillMaxSize(),
                 categoryId = selectedCategory.id
             )

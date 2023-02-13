@@ -3,4 +3,5 @@
     <string name="search">Search</string>
     <string name="account">Account</string>
     <string name="check_mark">Check</string>
+    <string name="edit_square">Check</string>
 </resources>

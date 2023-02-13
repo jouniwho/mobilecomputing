@@ -4,14 +4,14 @@ import androidx.room.Embedded
 import androidx.room.Ignore
 import androidx.room.Relation
 import com.example.app3.data.entity.Category
-import com.example.app3.data.entity.Payment
+import com.example.app3.data.entity.Reminder
 import java.util.*
 
-class PaymentToCategory {
+class ReminderToCategory {
     @Embedded
-    lateinit var payment: Payment
+    lateinit var remainder: Reminder
 
-    @Relation(parentColumn = "payment_category_id", entityColumn = "id")
+    @Relation(parentColumn = "reminder_category_id", entityColumn = "id")
     lateinit var _categories: List<Category>
 
     @get:Ignore
@@ -21,14 +21,14 @@ class PaymentToCategory {
     /**
      * Allow this class to be destructured by consumers
      */
-    operator fun component1() = payment
+    operator fun component1() = remainder
     operator fun component2() = category
 
     override fun equals(other: Any?): Boolean = when {
         other === this -> true
-        other is PaymentToCategory -> payment == other.payment && _categories == other._categories
+        other is ReminderToCategory -> remainder == other.remainder && _categories == other._categories
         else -> false
     }
 
-    override fun hashCode(): Int = Objects.hash(payment, _categories)
+    override fun hashCode(): Int = Objects.hash(remainder, _categories)
 }

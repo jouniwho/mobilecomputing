@@ -1,6 +1,7 @@
-package com.example.app3.ui.payment
+package com.example.app3.ui.Reminder
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.widget.DatePicker
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -30,30 +30,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import com.example.app3.data.entity.Category
+import com.example.app3.data.entity.User
 import com.google.accompanist.insets.systemBarsPadding
 import java.util.*
 import kotlinx.coroutines.launch
-import kotlin.reflect.KProperty0
 
 @Composable
-fun Payment(
+fun Reminder(
     navController: NavController,
-    viewModel: PaymentViewModel = viewModel()
+    viewModel: ReminderViewModel = viewModel()
 ) {
-    val viewState by viewModel.state.collectAsState()
+
     val coroutineScope = rememberCoroutineScope()
+    val viewState by viewModel.state.collectAsState()
+
     val title = rememberSaveable { mutableStateOf("") }
     val category = rememberSaveable { mutableStateOf("") }
     val amount = rememberSaveable { mutableStateOf("") }
-    val date = rememberSaveable { mutableStateOf("") }
+    val loc_x = rememberSaveable { mutableStateOf("") }
+    val loc_y = rememberSaveable { mutableStateOf("") }
+    val mCalendar = Calendar.getInstance()
+    mCalendar.time = Date()
+    val hour = mCalendar[Calendar.HOUR_OF_DAY]
+    val minute = mCalendar[Calendar.MINUTE]
+    val mContext = LocalContext.current
+    val mYear = mCalendar.get(Calendar.YEAR)
+    val mMonth = mCalendar.get(Calendar.MONTH)
+    val mDay = mCalendar.get(Calendar.DAY_OF_MONTH)
 
     Surface {
         Column(
@@ -85,7 +94,7 @@ fun Payment(
                 OutlinedTextField(
                     value = title.value,
                     onValueChange = { title.value = it },
-                    label = { Text(text = "Reminder title")},
+                    label = { Text(text = "Reminder title") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(10.dp))
@@ -97,55 +106,77 @@ fun Payment(
                 OutlinedTextField(
                     value = amount.value,
                     onValueChange = { amount.value = it },
-                    label = { Text(text = "Note")},
+                    label = { Text(text = "Note") },
                 )
                 Spacer(modifier = Modifier.height(10.dp))
 
-                val mContext = LocalContext.current
+                if (category.value == "Time") {
 
-                val mYear: Int
-                val mMonth: Int
-                val mDay: Int
+                    val mDate = remember { mutableStateOf("") }
 
-                val mCalendar = Calendar.getInstance()
+                    val mDatePickerDialog = DatePickerDialog(
+                        mContext,
+                        { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
+                            mDate.value = "$mDayOfMonth/${mMonth + 1}/$mYear"
+                        }, mYear, mMonth, mDay
+                    )
 
-                mYear = mCalendar.get(Calendar.YEAR)
-                mMonth = mCalendar.get(Calendar.MONTH)
-                mDay = mCalendar.get(Calendar.DAY_OF_MONTH)
+                    var selectedTimeText by remember { mutableStateOf("") }
 
-                mCalendar.time = Date()
 
-                val mDate = remember { mutableStateOf("") }
+                    val timePicker = TimePickerDialog(
+                        mContext,
+                        { _, selectedHour: Int, selectedMinute: Int ->
+                            selectedTimeText = "$selectedHour:$selectedMinute"
+                        }, hour, minute, false
+                    )
 
-                val mDatePickerDialog = DatePickerDialog(
-                    mContext,
-                    { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
-                        mDate.value = "$mDayOfMonth/${mMonth+1}/$mYear"
-                    }, mYear, mMonth, mDay
-                )
+                    Text(
+                        text = if (selectedTimeText.isNotEmpty()) {
+                            "Selected time is $selectedTimeText"
+                        } else {
+                            "Please select the time"
+                        }
+                    )
 
-                Button(onClick = {
-                    mDatePickerDialog.show()
-                }, colors = ButtonDefaults.buttonColors(backgroundColor = Color(0XFF0F9D58)) ) {
-                    Text(text = "Open Date Picker",
-                        color = Color.White)
-                }
-                Spacer(modifier = Modifier.size(10.dp))
-                Text(text = "Selected Date: ${mDate.value}",
-                    fontSize = 30.sp,
-                    textAlign = TextAlign.Center)
+                    Button(
+                        onClick = {
+                            timePicker.show()
+                        }
+                    ) {
+                        Text(text = "Select time")
+                    }
+
+                    Button(onClick = {
+                        mDatePickerDialog.show()
+                    }) {
+                        Text(
+                            text = "Open Date Picker",
+                            color = Color.White
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(10.dp))
+                    Text(
+                        text = "Selected Date: ${mDate.value}",
+                        fontSize = 30.sp,
+                        textAlign = TextAlign.Center
+                    )
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Button(
                     enabled = true,
                     onClick = {
                         coroutineScope.launch {
-                            viewModel.savePayment(
-                                com.example.app3.data.entity.Payment(
-                                    paymentTitle = title.value,
-                                    paymentAmount = amount.value,
-                                    paymentDate = mDate.value,
-                                    paymentCategoryId = getCategoryId(viewState.categories, category.value)
+                            viewModel.saveReminder(
+                                com.example.app3.data.entity.Reminder(
+                                    message = title.value,
+                                    reminderCategoryId = getCategoryId(
+                                        viewState.categories,
+                                        category.value
+                                    ),
+                                    reminderDate = mDate.value,
+                                    reminderTime = selectedTimeText,
+                                    reminderCategory = category.value
                                 )
                             )
                         }
@@ -161,6 +192,54 @@ fun Payment(
                     Text("Save notification")
                 }
             }
+            if (category.value == "Location") {
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = loc_x.value,
+                    onValueChange = { loc_x.value = it },
+                    label = { Text(text = "location X") },
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = loc_y.value,
+                    onValueChange = { loc_y.value = it },
+                    label = { Text(text = "location Y") },
+                )
+
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    enabled = true,
+                    onClick = {
+                        coroutineScope.launch {
+                            viewModel.saveReminder(
+                                com.example.app3.data.entity.Reminder(
+                                    message = title.value,
+                                    reminderCategoryId = getCategoryId(
+                                        viewState.categories,
+                                        category.value
+                                    ),
+                                    locationX = loc_x.value,
+                                    locationY = loc_y.value,
+                                    reminderCategory = category.value
+                                )
+                            )
+                        }
+                        navController.navigate("home") {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .size(55.dp)
+                ) {
+                    Text("Save notification")
+                }
+            }
+
+            }
         }
     }
 }
@@ -169,9 +248,19 @@ private fun getCategoryId(categories: List<Category>, categoryName: String): Lon
     return categories.first { category -> category.name == categoryName }.id
 }
 
+private fun getuserId(users: List<User>, userName: String): Long {
+    return try {
+        val test = users.first { user -> user.username == userName }.id
+        test
+    }
+    catch(e: NoSuchElementException){
+        404
+    }
+}
+
 @Composable
-private fun CategoryListDropdown(
-    viewState: PaymentViewState,
+fun CategoryListDropdown(
+    viewState: ReminderViewState,
     category: MutableState<String>
 ) {
     var expanded by remember { mutableStateOf(false) }
