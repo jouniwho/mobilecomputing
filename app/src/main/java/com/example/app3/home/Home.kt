@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -20,11 +19,8 @@ import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.app3.R
 import com.example.app3.data.entity.Category
-import com.example.app3.data.entity.User
 import com.example.app3.home.categoryReminder.CategoryReminder
-import com.example.app3.ui.login.RegistrationViewModel
 import com.google.accompanist.insets.systemBarsPadding
-import kotlinx.coroutines.launch
 
 @Composable
 fun Home(
@@ -58,17 +54,13 @@ fun HomeContent(
     selectedCategory: Category,
     categories: List<Category>,
     onCategorySelected: (Category) -> Unit,
-    navController: NavController,
-    anotherViewModel: RegistrationViewModel = viewModel()
+    navController: NavController
 ) {
-
-    val coroutineScope = rememberCoroutineScope()
-
     Scaffold(
         modifier = Modifier.padding(bottom = 24.dp),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(route = "reminder") },
+                onClick = {navController.navigate(route = "reminder") },
                 contentColor = Color.Blue,
                 modifier = Modifier.padding(all = 20.dp)
             )
@@ -103,6 +95,7 @@ fun HomeContent(
                 modifier = Modifier.fillMaxSize(),
                 categoryId = selectedCategory.id
             )
+
 
         }
 

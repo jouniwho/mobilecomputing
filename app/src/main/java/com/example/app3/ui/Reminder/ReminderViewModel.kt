@@ -3,32 +3,33 @@ package com.example.app3.ui.Reminder
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat.from
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.Constraints
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
+import androidx.work.*
 import com.example.app3.Graph
+import com.example.app3.MainActivity
 import com.example.app3.R
 import com.example.app3.data.entity.Category
 import com.example.app3.data.entity.Reminder
 import com.example.app3.data.entity.User
 import com.example.app3.data.repository.CategoryRepository
 import com.example.app3.data.repository.ReminderRepository
-import com.example.app3.data.room.ReminderToCategory
 import com.example.app3.util.NotificationWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
+
 
 class ReminderViewModel(
     private val reminderRepository: ReminderRepository = Graph.reminderRepository,
@@ -55,7 +56,7 @@ class ReminderViewModel(
 
     init {
         createNotificationChannel(context = Graph.appContext)
-        //setOneTimeNotification() I'll work on notifications later
+        //setOneTimeNotification()
         viewModelScope.launch {
             categoryRepository.categories().collect { reminders ->
                 _state.value = ReminderViewState(reminders)
@@ -144,28 +145,103 @@ private fun createErrorNotification(){
 
 }
 
-private fun createReminderMadeNotification(reminder: Reminder){
+fun createReminderMadeNotification(reminder: Reminder){
     val notificationId = 2
+    val date = reminder.reminderDate
+    val timee = reminder.reminderTime
+    val idd = reminder.id
+
+    val activityIntent = Intent(Graph.appContext, MainActivity::class.java)
+    val activityPendingIntent = PendingIntent.getActivity(
+        Graph.appContext,
+        1,
+        activityIntent,
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_MUTABLE else 0
+    )
+
+
+    val broadcast = Intent(Graph.appContext, MyBroadcastReceiver::class.java)
+    broadcast.putExtra("date", date)
+    broadcast.putExtra("time", timee)
+    broadcast.putExtra("ID", idd)
+
+    val incrementIntent = PendingIntent.getBroadcast(
+        Graph.appContext,
+        2,
+        broadcast,
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_MUTABLE else 0,
+
+    )
+
     val builder = NotificationCompat.Builder(Graph.appContext, "CHANNEL_ID")
         .setSmallIcon(R.drawable.ic_launcher_background)
-        .setContentTitle("New reminder made")
-        .setContentText("You set reminder")
+        .setContentTitle(reminder.message)
+        .setContentText("@${reminder.reminderTime} ${reminder.reminderDate}")
         .setPriority(NotificationCompat.PRIORITY_HIGH)
-    with(from(Graph.appContext)) {
-        if (ActivityCompat.checkSelfPermission(
-                Graph.appContext,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return
+        .setContentIntent(activityPendingIntent)
+        .addAction(
+            R.drawable.ic_launcher_background,
+            "asd",
+            incrementIntent,
+        )
+
+
+    val workManager = WorkManager.getInstance(Graph.appContext)
+    val constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+    //count time to the notification in minutes
+    val time = countTime(reminder.reminderCreation, reminder.reminderTime, reminder.reminderDate)
+
+    val notificationWorker = OneTimeWorkRequestBuilder<NotificationWorker>()
+        .setInitialDelay(time, TimeUnit.MINUTES)
+        .setConstraints(constraints)
+        .build()
+
+    workManager.enqueue(notificationWorker)
+
+    //Monitoring for state of work
+    workManager.getWorkInfoByIdLiveData(notificationWorker.id)
+        .observeForever{ workInfo ->
+            if (workInfo.state == WorkInfo.State.SUCCEEDED){
+                with(from(Graph.appContext)) {
+                    if (ActivityCompat.checkSelfPermission(
+                            Graph.appContext,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        return@observeForever
+                    }
+                    notify(notificationId, builder.build())
+                    }
+            }
         }
-        notify(notificationId, builder.build())
-    }
 }
+
+private fun countTime(time: String, originalTime: String, originaldate: String): Long {
+    // time = "$mDay $mMonth $mYear $hour $minute"
+    val date = time.split(" ")
+
+    val dateone = "${date[0]}/${date[1]}/${date[2]} ${date[3]}:${date[4]}"
+    val datetwo = "$originaldate $originalTime"
+    val mDateFormat = SimpleDateFormat("dd/MM/yyyy hh:mm")
+
+    val mDate1 = mDateFormat.parse(dateone)
+    val mDate2 = mDateFormat.parse(datetwo)
+
+    // Finding the absolute difference between
+    // the two dates.time (in milli seconds)
+    val mDifference = kotlin.math.abs(mDate1.time - mDate2.time)
+
+    // Converting milli seconds to minutes
+    return mDifference / (60 * 1000)
+
+}
+

@@ -146,6 +146,7 @@ fun UpdateReminder(
                     updated.remindDate = mDate.value
                     updated.remindTime = selectedTimeText
                     updated.remindCategory = category.value
+                    updated.remindCreation = "$mDay $mMonth $mYear $hour $minute"
 
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(

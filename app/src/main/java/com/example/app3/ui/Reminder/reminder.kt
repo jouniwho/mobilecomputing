@@ -55,6 +55,7 @@ fun Reminder(
     val amount = rememberSaveable { mutableStateOf("") }
     val loc_x = rememberSaveable { mutableStateOf("") }
     val loc_y = rememberSaveable { mutableStateOf("") }
+    val idd:Long = rememberSaveable { 0 }
     val mCalendar = Calendar.getInstance()
     mCalendar.time = Date()
     val hour = mCalendar[Calendar.HOUR_OF_DAY]
@@ -103,12 +104,6 @@ fun Reminder(
                     category = category
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = amount.value,
-                    onValueChange = { amount.value = it },
-                    label = { Text(text = "Note") },
-                )
-                Spacer(modifier = Modifier.height(10.dp))
 
                 if (category.value == "Time") {
 
@@ -122,7 +117,6 @@ fun Reminder(
                     )
 
                     var selectedTimeText by remember { mutableStateOf("") }
-
 
                     val timePicker = TimePickerDialog(
                         mContext,
@@ -169,6 +163,7 @@ fun Reminder(
                         coroutineScope.launch {
                             viewModel.saveReminder(
                                 com.example.app3.data.entity.Reminder(
+                                    anotherID = idd +1,
                                     message = title.value,
                                     reminderCategoryId = getCategoryId(
                                         viewState.categories,
@@ -176,7 +171,8 @@ fun Reminder(
                                     ),
                                     reminderDate = mDate.value,
                                     reminderTime = selectedTimeText,
-                                    reminderCategory = category.value
+                                    reminderCategory = category.value,
+                                    reminderCreation = "$mDay ${mMonth+1} $mYear $hour $minute"
                                 )
                             )
                         }
@@ -215,6 +211,7 @@ fun Reminder(
                         coroutineScope.launch {
                             viewModel.saveReminder(
                                 com.example.app3.data.entity.Reminder(
+                                    anotherID = idd +1,
                                     message = title.value,
                                     reminderCategoryId = getCategoryId(
                                         viewState.categories,
