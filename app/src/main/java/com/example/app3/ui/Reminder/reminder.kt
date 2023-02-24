@@ -4,14 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.DatePicker
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -40,6 +33,7 @@ import com.example.app3.data.entity.User
 import com.google.accompanist.insets.systemBarsPadding
 import java.util.*
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 
 @Composable
 fun Reminder(
@@ -52,10 +46,8 @@ fun Reminder(
 
     val title = rememberSaveable { mutableStateOf("") }
     val category = rememberSaveable { mutableStateOf("") }
-    val amount = rememberSaveable { mutableStateOf("") }
     val loc_x = rememberSaveable { mutableStateOf("") }
     val loc_y = rememberSaveable { mutableStateOf("") }
-    val idd:Long = rememberSaveable { 0 }
     val mCalendar = Calendar.getInstance()
     mCalendar.time = Date()
     val hour = mCalendar[Calendar.HOUR_OF_DAY]
@@ -117,11 +109,14 @@ fun Reminder(
                     )
 
                     var selectedTimeText by remember { mutableStateOf("") }
+                    val timeformat = SimpleDateFormat("HH:mm")
 
                     val timePicker = TimePickerDialog(
                         mContext,
                         { _, selectedHour: Int, selectedMinute: Int ->
-                            selectedTimeText = "$selectedHour:$selectedMinute"
+                            val parsed = timeformat.parse("$selectedHour:$selectedMinute")
+                            val formattedtime = timeformat.format(parsed!!)
+                            selectedTimeText = formattedtime
                         }, hour, minute, false
                     )
 
@@ -157,13 +152,21 @@ fun Reminder(
                     )
 
                 Spacer(modifier = Modifier.height(10.dp))
+                    val checkedState = remember { mutableStateOf(true) }
+                    Row {
+                        Checkbox(
+                            checked = checkedState.value,
+                            onCheckedChange = { checkedState.value = it },
+                        )
+                        Text(text = "Make a notification?")
+                    }
+                Spacer(modifier = Modifier.height(10.dp))
                 Button(
                     enabled = true,
                     onClick = {
                         coroutineScope.launch {
                             viewModel.saveReminder(
                                 com.example.app3.data.entity.Reminder(
-                                    anotherID = idd +1,
                                     message = title.value,
                                     reminderCategoryId = getCategoryId(
                                         viewState.categories,
@@ -172,7 +175,8 @@ fun Reminder(
                                     reminderDate = mDate.value,
                                     reminderTime = selectedTimeText,
                                     reminderCategory = category.value,
-                                    reminderCreation = "$mDay ${mMonth+1} $mYear $hour $minute"
+                                    reminderCreation = "$mDay ${mMonth+1} $mYear $hour $minute",
+                                    notification = checkedState.value
                                 )
                             )
                         }
@@ -211,7 +215,6 @@ fun Reminder(
                         coroutineScope.launch {
                             viewModel.saveReminder(
                                 com.example.app3.data.entity.Reminder(
-                                    anotherID = idd +1,
                                     message = title.value,
                                     reminderCategoryId = getCategoryId(
                                         viewState.categories,

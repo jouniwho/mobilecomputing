@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat.from
@@ -41,7 +40,9 @@ class ReminderViewModel(
         get() = _state
 
     suspend fun saveReminder(reminder: Reminder): Long {
-        createReminderMadeNotification(reminder)
+        if(reminder.notification) {
+            createReminderMadeNotification(reminder)
+        }
         return reminderRepository.addReminder(reminder)
     }
 
@@ -156,7 +157,7 @@ fun createReminderMadeNotification(reminder: Reminder){
         Graph.appContext,
         1,
         activityIntent,
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_MUTABLE else 0
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
     )
 
 
@@ -179,11 +180,6 @@ fun createReminderMadeNotification(reminder: Reminder){
         .setContentText("@${reminder.reminderTime} ${reminder.reminderDate}")
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setContentIntent(activityPendingIntent)
-        .addAction(
-            R.drawable.ic_launcher_background,
-            "asd",
-            incrementIntent,
-        )
 
 
     val workManager = WorkManager.getInstance(Graph.appContext)
@@ -231,7 +227,7 @@ private fun countTime(time: String, originalTime: String, originaldate: String):
 
     val dateone = "${date[0]}/${date[1]}/${date[2]} ${date[3]}:${date[4]}"
     val datetwo = "$originaldate $originalTime"
-    val mDateFormat = SimpleDateFormat("dd/MM/yyyy hh:mm")
+    val mDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm")
 
     val mDate1 = mDateFormat.parse(dateone)
     val mDate2 = mDateFormat.parse(datetwo)

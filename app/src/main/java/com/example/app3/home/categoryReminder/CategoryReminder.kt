@@ -31,6 +31,8 @@ import com.example.app3.ui.Reminder.ReminderViewModel
 import com.example.app3.ui.Reminder.UpdateReminder
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalTime
 import java.util.*
 
 @Composable
@@ -104,11 +106,10 @@ private fun ReminderListItem(
     val reminderIdState: MutableState<Long?> = rememberSaveable { mutableStateOf(null) }
     val popupState = rememberSaveable { mutableStateOf(PopupState.Close) }
 
-    if(seen.remnindSeen){
-        val teest = getreminderwithtime(list, seen.time, seen.date)
+    if(countTime(reminder.reminderTime, reminder.reminderDate) <= 0){
         coroutineScope.launch {viewModel.updateReminder(
             Reminder(
-                id = teest +1,
+                id = reminder.id,
                 reminderCategoryId = reminder.reminderCategoryId,
                 reminderSeen = true,
                 message = reminder.message,
@@ -119,8 +120,8 @@ private fun ReminderListItem(
                 reminderCategory = reminder.reminderCategory
             )
         )}
-        seen.remnindSeen = false
     }
+
     if(reminder.reminderSeen) {
         ConstraintLayout(modifier = modifier.clickable { onClick() }.pointerInput(Unit) {
             detectTapGestures(
@@ -278,6 +279,39 @@ private fun getreminderwithtime(reminders: List<ReminderToCategory>, time: Strin
         }
     }
     return 0
+}
+
+
+private fun countTime(remindertime: String, reminderdate: String): Long {
+    // time = "$mDay $mMonth $mYear $hour $minute"
+    //val date = time.split(" ")
+    val test = LocalDate.now().toString()
+    val dtf3 = SimpleDateFormat("dd-MM-yyyy")
+    val dtf2 = SimpleDateFormat("yyyy-MM-dd")
+    val test3 = dtf2.parse(test)
+    val test4 = dtf3.format(test3)
+    val new_date = test4.replace("-", "/")
+    val test2 = LocalTime.now().toString()
+    val sdf1 = SimpleDateFormat("HH:mm:ss")
+    val sdf2 = SimpleDateFormat("HH:mm")
+    val dateee = sdf1.parse(test2)
+    val dte = sdf2.format(dateee!!)
+    val current_time = "$new_date $dte"
+    //val dateone = "${date[0]}/${date[1]}/${date[2]} ${date[3]}:${date[4]}"
+    val datetwo = "$reminderdate $remindertime"
+    val mDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm")
+    val mDate2 = mDateFormat.parse(datetwo)
+    val date2 = mDateFormat.format(mDate2)
+    val mDate1 = mDateFormat.parse(current_time)
+    val mDate3 = mDateFormat.parse(date2)
+
+    // Finding the absolute difference between
+    // the two dates.time (in milli seconds)
+    val mDifference = (mDate3.time - mDate1.time)
+    val dif = mDifference
+    // Converting milli seconds to minutes
+    return mDifference / (60 * 1000)
+
 }
 
 private fun Date.formatToString(): String {
