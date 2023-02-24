@@ -26,8 +26,8 @@ import androidx.room.PrimaryKey
 data class Reminder(
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") val id: Long = 0,
     @ColumnInfo(name = "message") val message: String = "",
-    @ColumnInfo(name = "location_x") val locationX: String = "",
-    @ColumnInfo(name = "location_y") val locationY: String = "",
+    @ColumnInfo(name = "location_x") val locationX: Float = 0.0f,
+    @ColumnInfo(name = "location_y") val locationY: Float = 0.0f,
     @ColumnInfo(name = "reminder_time") val reminderTime: String = "",
     @ColumnInfo(name = "reminder_date") val reminderDate: String = "",
     @ColumnInfo(name = "creation_time") val reminderCreation: String = "",

@@ -105,8 +105,24 @@ private fun ReminderListItem(
     val coroutineScope = rememberCoroutineScope()
     val reminderIdState: MutableState<Long?> = rememberSaveable { mutableStateOf(null) }
     val popupState = rememberSaveable { mutableStateOf(PopupState.Close) }
-
-    if(countTime(reminder.reminderTime, reminder.reminderDate) <= 0){
+    if(reminder.reminderTime != ""){
+        if(countTime(reminder.reminderTime, reminder.reminderDate) <= 0){
+            coroutineScope.launch {viewModel.updateReminder(
+                Reminder(
+                    id = reminder.id,
+                    reminderCategoryId = reminder.reminderCategoryId,
+                    reminderSeen = true,
+                    message = reminder.message,
+                    reminderDate = reminder.reminderDate,
+                    reminderTime = reminder.reminderTime,
+                    locationX = reminder.locationX,
+                    locationY = reminder.locationY,
+                    reminderCategory = reminder.reminderCategory
+                )
+            )}
+        }
+    }
+    if(reminder.reminderTime == "" && reminder.locationX == 0.0f && reminder.locationY == 0.0f){
         coroutineScope.launch {viewModel.updateReminder(
             Reminder(
                 id = reminder.id,
@@ -243,6 +259,8 @@ private fun ReminderListItem(
                                         message = it.mess,
                                         reminderDate = it.remindDate,
                                         reminderTime = it.remindTime,
+                                        locationX = it.locX,
+                                        locationY = it.locY,
                                         reminderCategory = it.remindCategory,
                                     )
                                 )

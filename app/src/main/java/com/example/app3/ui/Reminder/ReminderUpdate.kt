@@ -23,8 +23,8 @@ import java.util.*
 
 class remind{
     var mess = ""
-    var locX = ""
-    var locY = ""
+    var locX = 0.0f
+    var locY = 0.0f
     var remindTime = ""
     var remindDate = ""
     var remindCreation = ""
@@ -46,8 +46,8 @@ fun UpdateReminder(
     val title = rememberSaveable { mutableStateOf(reminder.message) }
     val category = rememberSaveable { mutableStateOf(reminder.reminderCategory) }
     val mCalendar = Calendar.getInstance()
-    val loc_x = rememberSaveable { mutableStateOf(reminder.locationX) }
-    val loc_y = rememberSaveable { mutableStateOf(reminder.locationY) }
+    val loc_x = rememberSaveable { mutableStateOf(reminder.locationX.toString()) }
+    val loc_y = rememberSaveable { mutableStateOf(reminder.locationY.toString()) }
     mCalendar.time = Date()
     val hour = mCalendar[Calendar.HOUR_OF_DAY]
     val minute = mCalendar[Calendar.MINUTE]
@@ -145,6 +145,8 @@ fun UpdateReminder(
                     updated.mess = title.value
                     updated.remindDate = mDate.value
                     updated.remindTime = selectedTimeText
+                    updated.locX = 0.0f
+                    updated.locY = 0.0f
                     updated.remindCategory = category.value
                     updated.remindCreation = "$mDay $mMonth $mYear $hour $minute"
 
@@ -179,8 +181,10 @@ fun UpdateReminder(
                 )
 
                 updated.mess = title.value
-                updated.locX = loc_x.value
-                updated.locY = loc_y.value
+                updated.remindDate = ""
+                updated.remindTime = ""
+                updated.locX = loc_x.value.toFloat()
+                updated.locY = loc_y.value.toFloat()
                 updated.remindCategory = category.value
 
 

@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.from
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,7 +42,12 @@ class ReminderViewModel(
 
     suspend fun saveReminder(reminder: Reminder): Long {
         if(reminder.notification) {
-            createReminderMadeNotification(reminder)
+            if(reminder.reminderTime != "") {
+                createReminderMadeNotification(reminder)
+            }
+            if(reminder.reminderTime == "" && reminder.locationX == 0.0f && reminder.locationY == 0.0f) {
+                createLocationNotification(reminder)
+            }
         }
         return reminderRepository.addReminder(reminder)
     }
@@ -146,11 +152,8 @@ private fun createErrorNotification(){
 
 }
 
-fun createReminderMadeNotification(reminder: Reminder){
-    val notificationId = 2
-    val date = reminder.reminderDate
-    val timee = reminder.reminderTime
-    val idd = reminder.id
+private fun createLocationNotification(reminder: Reminder) {
+    val notificationId = 3
 
     val activityIntent = Intent(Graph.appContext, MainActivity::class.java)
     val activityPendingIntent = PendingIntent.getActivity(
@@ -160,6 +163,32 @@ fun createReminderMadeNotification(reminder: Reminder){
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
     )
 
+    val builder = NotificationCompat.Builder(Graph.appContext, "CHANNEL_ID")
+        .setSmallIcon(R.drawable.ic_launcher_background)
+        .setContentTitle("Location reminder")
+        .setContentText("You arrived location (X:${reminder.locationX},Y:${reminder.locationY})")
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setContentIntent(activityPendingIntent)
+    with(NotificationManagerCompat.from(Graph.appContext)) {
+        notify(notificationId, builder.build())
+    }
+}
+
+fun createReminderMadeNotification(reminder: Reminder){
+    val notificationId = 2
+    val date = reminder.reminderDate
+    val timee = reminder.reminderTime
+    val idd = reminder.id
+    val loc = reminder.locationX
+    val loca = reminder.locationY
+
+    val activityIntent = Intent(Graph.appContext, MainActivity::class.java)
+    val activityPendingIntent = PendingIntent.getActivity(
+        Graph.appContext,
+        1,
+        activityIntent,
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+    )
 
     val broadcast = Intent(Graph.appContext, MyBroadcastReceiver::class.java)
     broadcast.putExtra("date", date)
@@ -187,6 +216,7 @@ fun createReminderMadeNotification(reminder: Reminder){
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
     //count time to the notification in minutes
+
     val time = countTime(reminder.reminderCreation, reminder.reminderTime, reminder.reminderDate)
 
     val notificationWorker = OneTimeWorkRequestBuilder<NotificationWorker>()

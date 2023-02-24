@@ -56,6 +56,7 @@ fun Reminder(
     val mYear = mCalendar.get(Calendar.YEAR)
     val mMonth = mCalendar.get(Calendar.MONTH)
     val mDay = mCalendar.get(Calendar.DAY_OF_MONTH)
+    val checkedState = remember { mutableStateOf(true) }
 
     Surface {
         Column(
@@ -140,8 +141,7 @@ fun Reminder(
                         mDatePickerDialog.show()
                     }) {
                         Text(
-                            text = "Open Date Picker",
-                            color = Color.White
+                            text = "Open Date Picker"
                         )
                     }
                     Spacer(modifier = Modifier.size(10.dp))
@@ -152,7 +152,6 @@ fun Reminder(
                     )
 
                 Spacer(modifier = Modifier.height(10.dp))
-                    val checkedState = remember { mutableStateOf(true) }
                     Row {
                         Checkbox(
                             checked = checkedState.value,
@@ -175,6 +174,8 @@ fun Reminder(
                                     reminderDate = mDate.value,
                                     reminderTime = selectedTimeText,
                                     reminderCategory = category.value,
+                                    locationX = 0.0f,
+                                    locationY = 0.0f,
                                     reminderCreation = "$mDay ${mMonth+1} $mYear $hour $minute",
                                     notification = checkedState.value
                                 )
@@ -206,6 +207,13 @@ fun Reminder(
                     onValueChange = { loc_y.value = it },
                     label = { Text(text = "location Y") },
                 )
+                Row {
+                    Checkbox(
+                        checked = checkedState.value,
+                        onCheckedChange = { checkedState.value = it },
+                    )
+                    Text(text = "Make a notification?")
+                }
 
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -220,9 +228,12 @@ fun Reminder(
                                         viewState.categories,
                                         category.value
                                     ),
-                                    locationX = loc_x.value,
-                                    locationY = loc_y.value,
-                                    reminderCategory = category.value
+                                    reminderDate = "",
+                                    reminderTime = "",
+                                    locationX = loc_x.value.toFloat(),
+                                    locationY = loc_y.value.toFloat(),
+                                    reminderCategory = category.value,
+                                    notification = checkedState.value
                                 )
                             )
                         }
