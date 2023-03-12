@@ -45,14 +45,16 @@ class ReminderViewModel(
             if(reminder.reminderTime != "") {
                 createReminderMadeNotification(reminder)
             }
-            if(reminder.reminderTime == "" && reminder.locationX == 0.0f && reminder.locationY == 0.0f) {
-                createLocationNotification(reminder)
-            }
         }
         return reminderRepository.addReminder(reminder)
     }
 
     suspend fun updateReminder(reminder: Reminder) {
+        if(reminder.notification) {
+            if(reminder.reminderTime == "") {
+                createLocationNotification(reminder)
+            }
+        }
         return reminderRepository.editReminder(reminder)
     }
 

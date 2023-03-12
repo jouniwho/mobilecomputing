@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -20,18 +21,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.app3.R
 import com.example.app3.data.entity.Category
 import com.example.app3.home.categoryReminder.CategoryReminder
+import com.example.app3.maps.LocationDetails
+import com.example.app3.maps.appViewModel
 import com.google.accompanist.insets.systemBarsPadding
 
 @Composable
 fun Home(
     viewModel: HomeViewModel = viewModel(),
-    navController: NavController
+    navController: NavController,
+    //location: LocationDetails?
 ) {
     val viewState by viewModel.state.collectAsState()
 
 
     val selectedCategory = viewState.selectedCategory
-
+    val applicationViewModel: appViewModel = viewModel<appViewModel>()
+    val location = applicationViewModel.getLocationLiveData().observeAsState()
 
     if (viewState.categories.isNotEmpty() && selectedCategory != null) {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -39,7 +44,8 @@ fun Home(
                 selectedCategory = selectedCategory,
                 categories = viewState.categories,
                 onCategorySelected = viewModel::onCategorySelected,
-                navController = navController
+                navController = navController,
+                location = location.value
             )
 
         }
@@ -54,7 +60,8 @@ fun HomeContent(
     selectedCategory: Category,
     categories: List<Category>,
     onCategorySelected: (Category) -> Unit,
-    navController: NavController
+    navController: NavController,
+    location: LocationDetails?
 ) {
     Scaffold(
         modifier = Modifier.padding(bottom = 24.dp),
@@ -93,7 +100,8 @@ fun HomeContent(
 
             CategoryReminder(
                 modifier = Modifier.fillMaxSize(),
-                categoryId = selectedCategory.id
+                categoryId = selectedCategory.id,
+                location = location
             )
 
 

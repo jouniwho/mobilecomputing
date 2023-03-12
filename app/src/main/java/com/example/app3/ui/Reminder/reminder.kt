@@ -2,7 +2,9 @@ package com.example.app3.ui.Reminder
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Intent
 import android.widget.DatePicker
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -14,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -21,16 +24,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.app3.Graph
 import com.example.app3.data.entity.Category
 import com.example.app3.data.entity.User
+import com.example.app3.maps.LocationDetails
+import com.example.app3.maps.appViewModel
 import com.google.accompanist.insets.systemBarsPadding
+import com.google.android.gms.maps.model.LatLng
 import java.util.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -38,12 +44,12 @@ import java.text.SimpleDateFormat
 @Composable
 fun Reminder(
     navController: NavController,
-    viewModel: ReminderViewModel = viewModel()
+    viewModel: ReminderViewModel = viewModel(),
+    //location: LocationDetails?
 ) {
-
     val coroutineScope = rememberCoroutineScope()
     val viewState by viewModel.state.collectAsState()
-
+    val context = LocalContext.current
     val title = rememberSaveable { mutableStateOf("") }
     val category = rememberSaveable { mutableStateOf("") }
     val loc_x = rememberSaveable { mutableStateOf("") }
@@ -57,6 +63,15 @@ fun Reminder(
     val mMonth = mCalendar.get(Calendar.MONTH)
     val mDay = mCalendar.get(Calendar.DAY_OF_MONTH)
     val checkedState = remember { mutableStateOf(true) }
+    var selectedTimeText by remember { mutableStateOf("") }
+    val mDate = remember { mutableStateOf("") }
+    val applicationViewModel: appViewModel = viewModel<appViewModel>()
+    val location = applicationViewModel.getLocationLiveData().observeAsState()
+    val latlng = navController
+        .currentBackStackEntry
+        ?.savedStateHandle
+        ?.getLiveData<LatLng>("location_data")
+        ?.value
 
     Surface {
         Column(
@@ -100,8 +115,6 @@ fun Reminder(
 
                 if (category.value == "Time") {
 
-                    val mDate = remember { mutableStateOf("") }
-
                     val mDatePickerDialog = DatePickerDialog(
                         mContext,
                         { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
@@ -109,7 +122,6 @@ fun Reminder(
                         }, mYear, mMonth, mDay
                     )
 
-                    var selectedTimeText by remember { mutableStateOf("") }
                     val timeformat = SimpleDateFormat("HH:mm")
 
                     val timePicker = TimePickerDialog(
@@ -163,27 +175,35 @@ fun Reminder(
                 Button(
                     enabled = true,
                     onClick = {
-                        coroutineScope.launch {
-                            viewModel.saveReminder(
-                                com.example.app3.data.entity.Reminder(
-                                    message = title.value,
-                                    reminderCategoryId = getCategoryId(
-                                        viewState.categories,
-                                        category.value
-                                    ),
-                                    reminderDate = mDate.value,
-                                    reminderTime = selectedTimeText,
-                                    reminderCategory = category.value,
-                                    locationX = 0.0f,
-                                    locationY = 0.0f,
-                                    reminderCreation = "$mDay ${mMonth+1} $mYear $hour $minute",
-                                    notification = checkedState.value
+                        if(loc_x.value == "" && loc_y.value == "" && selectedTimeText != "" &&  mDate.value != ""){
+                            coroutineScope.launch {
+                                viewModel.saveReminder(
+                                    com.example.app3.data.entity.Reminder(
+                                        message = title.value,
+                                        reminderCategoryId = getCategoryId(
+                                            viewState.categories,
+                                            category.value
+                                        ),
+                                        reminderDate = mDate.value,
+                                        reminderTime = selectedTimeText,
+                                        reminderCategory = category.value,
+                                        locationX = 0.0,
+                                        locationY = 0.0,
+                                        reminderCreation = "$mDay ${mMonth+1} $mYear $hour $minute",
+                                        notification = checkedState.value
+                                    )
                                 )
-                            )
-                        }
-                        navController.navigate("home") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
+                            }
+                            navController.navigate("home") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        }else {
+                            Toast.makeText(
+                                context,
+                                "Date and Time required",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     },
                     modifier = Modifier
@@ -194,19 +214,36 @@ fun Reminder(
                 }
             }
             if (category.value == "Location") {
-                Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = loc_x.value,
-                    onValueChange = { loc_x.value = it },
-                    label = { Text(text = "location X") },
-                )
+                if (latlng == null) {
+                    OutlinedButton(
+                        onClick = { navController.navigate("map")
+                        },
+                        modifier = Modifier.height(55.dp)
+                    ) {
+                        Text(text = "Reminder location")
+                    }
+                } else {
+                    //Text(
+                    //    text = "Lat: ${latlng.latitude}, \nLng: ${latlng.longitude}"
+                    //)
+                    loc_x.value = latlng.latitude.toString()
+                    loc_y.value = latlng.longitude.toString()
+                    OutlinedTextField(
+                        value = loc_x.value,
+                        onValueChange = { loc_x.value = it },
+                        label = { Text(text = "location X") },
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = loc_y.value,
+                        onValueChange = { loc_y.value = it },
+                        label = { Text(text = "location Y") },
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = loc_y.value,
-                    onValueChange = { loc_y.value = it },
-                    label = { Text(text = "location Y") },
-                )
+                GPS(location.value)
+
+
                 Row {
                     Checkbox(
                         checked = checkedState.value,
@@ -220,6 +257,7 @@ fun Reminder(
                 Button(
                     enabled = true,
                     onClick = {
+                        if(loc_x.value != "" && loc_y.value != "" && selectedTimeText == "" ){
                         coroutineScope.launch {
                             viewModel.saveReminder(
                                 com.example.app3.data.entity.Reminder(
@@ -230,8 +268,8 @@ fun Reminder(
                                     ),
                                     reminderDate = "",
                                     reminderTime = "",
-                                    locationX = loc_x.value.toFloat(),
-                                    locationY = loc_y.value.toFloat(),
+                                    locationX = loc_x.value.toDouble(),
+                                    locationY = loc_y.value.toDouble(),
                                     reminderCategory = category.value,
                                     notification = checkedState.value
                                 )
@@ -240,6 +278,13 @@ fun Reminder(
                         navController.navigate("home") {
                             popUpTo(navController.graph.startDestinationId)
                             launchSingleTop = true
+                        }
+                        }else{
+                            Toast.makeText(
+                                context,
+                                "Location required",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     },
                     modifier = Modifier
@@ -313,6 +358,13 @@ fun CategoryListDropdown(
 
             }
         }
+    }
+}
+
+@Composable
+private fun GPS(location: LocationDetails?){
+    location?.let{
+        Text(text="Your location ${location.latitude}, ${location.longitude}")
     }
 }
 

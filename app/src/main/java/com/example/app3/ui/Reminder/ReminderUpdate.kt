@@ -23,8 +23,8 @@ import java.util.*
 
 class remind{
     var mess = ""
-    var locX = 0.0f
-    var locY = 0.0f
+    var locX = 0.0
+    var locY = 0.0
     var remindTime = ""
     var remindDate = ""
     var remindCreation = ""
@@ -145,8 +145,8 @@ fun UpdateReminder(
                     updated.mess = title.value
                     updated.remindDate = mDate.value
                     updated.remindTime = selectedTimeText
-                    updated.locX = 0.0f
-                    updated.locY = 0.0f
+                    updated.locX = 0.0
+                    updated.locY = 0.0
                     updated.remindCategory = category.value
                     updated.remindCreation = "$mDay $mMonth $mYear $hour $minute"
 
@@ -183,8 +183,8 @@ fun UpdateReminder(
                 updated.mess = title.value
                 updated.remindDate = ""
                 updated.remindTime = ""
-                updated.locX = loc_x.value.toFloat()
-                updated.locY = loc_y.value.toFloat()
+                updated.locX = loc_x.value.toDouble()
+                updated.locY = loc_y.value.toDouble()
                 updated.remindCategory = category.value
 
 

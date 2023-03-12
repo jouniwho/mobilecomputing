@@ -27,18 +27,25 @@ import com.example.app3.R
 import com.example.app3.data.entity.Category
 import com.example.app3.data.entity.Reminder
 import com.example.app3.data.room.ReminderToCategory
+import com.example.app3.maps.LocationDetails
 import com.example.app3.ui.Reminder.ReminderViewModel
 import com.example.app3.ui.Reminder.UpdateReminder
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.coroutines.launch
+import java.lang.Math.pow
+import java.lang.Math.sqrt
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.*
+import kotlin.math.pow
 
 @Composable
 fun CategoryReminder(
     categoryId: Long,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    location: LocationDetails?
 ) {
     val viewModel: CategoryReminderViewModel = viewModel(
         key = "category_list_$categoryId",
@@ -49,6 +56,7 @@ fun CategoryReminder(
     Column(modifier = modifier) {
         ReminderList(
             list = viewState.payments,
+            location = location
         )
         //Button(
         //    onClick = {},
@@ -62,7 +70,8 @@ fun CategoryReminder(
 
 @Composable
 private fun ReminderList(
-    list: List<ReminderToCategory>
+    list: List<ReminderToCategory>,
+    location: LocationDetails?
 ) {
     LazyColumn(
         contentPadding = PaddingValues(0.dp),
@@ -70,11 +79,11 @@ private fun ReminderList(
     ) {
         items(list) { item ->
             ReminderListItem(
-                list = list,
                 reminder = item.remainder,
                 category = item.category,
                 onClick = {},
                 modifier = Modifier.fillParentMaxWidth(),
+                location = location
             )
 
         }
@@ -94,12 +103,12 @@ object seen{
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 private fun ReminderListItem(
-    list: List<ReminderToCategory>,
     reminder: Reminder,
     category: Category,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReminderViewModel = viewModel(),
+    location: LocationDetails?
 ) {
     val viewState by viewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -122,7 +131,7 @@ private fun ReminderListItem(
             )}
         }
     }
-    if(reminder.reminderTime == "" && reminder.locationX == 0.0f && reminder.locationY == 0.0f){
+    /*if(reminder.reminderTime == "" && reminder.locationX == 0.0 && reminder.locationY == 0.0){
         coroutineScope.launch {viewModel.updateReminder(
             Reminder(
                 id = reminder.id,
@@ -136,6 +145,31 @@ private fun ReminderListItem(
                 reminderCategory = reminder.reminderCategory
             )
         )}
+    }*/
+
+    location?.let {
+        val x1 = location.latitude.toDouble()
+        val x2 = reminder.locationX
+        val y1 = location.longitude.toDouble()
+        val y2 = reminder.locationY
+        val distance = kotlin.math.sqrt(((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)))
+
+        if (distance <= 0.00046 && !reminder.reminderSeen){ //this is roughly 50m
+            coroutineScope.launch {viewModel.updateReminder(
+                Reminder(
+                    id = reminder.id,
+                    reminderCategoryId = reminder.reminderCategoryId,
+                    reminderSeen = true,
+                    message = reminder.message,
+                    reminderDate = reminder.reminderDate,
+                    reminderTime = reminder.reminderTime,
+                    locationX = reminder.locationX,
+                    locationY = reminder.locationY,
+                    reminderCategory = reminder.reminderCategory,
+                    notification = true
+                )
+            )}
+        }
     }
 
     if(reminder.reminderSeen) {
@@ -280,9 +314,6 @@ private fun ReminderListItem(
 
 }
 
-
-
-
 private fun getCategoryId(categories: List<Category>, categoryName: String): Long {
     return categories.first { category -> category.name == categoryName }.id
 }
@@ -299,6 +330,9 @@ private fun getreminderwithtime(reminders: List<ReminderToCategory>, time: Strin
     return 0
 }
 
+private fun check_distance(location_reminderX: Double, location_reminderY: Double, location_user: LocationDetails?){
+
+}
 
 private fun countTime(remindertime: String, reminderdate: String): Long {
     // time = "$mDay $mMonth $mYear $hour $minute"
